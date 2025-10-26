@@ -72,6 +72,22 @@ export default function RootLayout() {
           options={{ presentation: "card", title: "Entry" }}
         />
         <Stack.Screen
+          name="settings/notifications"
+          options={{
+            presentation: "card",
+            title: "Notifications",
+            headerBackTitle: "Settings",
+          }}
+        />
+        <Stack.Screen
+          name="settings/data-management"
+          options={{
+            presentation: "card",
+            title: "Data Management",
+            headerBackTitle: "Settings",
+          }}
+        />
+        <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
         />
