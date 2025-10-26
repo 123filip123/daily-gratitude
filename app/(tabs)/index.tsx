@@ -5,7 +5,8 @@ import {
   formatDateToDBFormat,
   formatDateToDisplayFormat,
 } from "@/lib/date-helpers";
-import React, { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -23,22 +24,29 @@ export default function TodayScreen() {
 
   const loadTodayEntry = useCallback(async () => {
     try {
+      setLoading(true);
       await initDatabase();
       const entry = await getEntryByDate(todayDB);
       if (entry) {
         setContent(entry.content);
+      } else {
+        // Clear content if no entry exists (e.g., after deletion)
+        setContent("");
       }
     } catch (error) {
       console.error("Error loading entry:", error);
-      Alert.alert("Error", "Failed to load todayDB's entry");
+      Alert.alert("Error", "Failed to load today's entry");
     } finally {
       setLoading(false);
     }
   }, [todayDB]);
 
-  useEffect(() => {
-    loadTodayEntry();
-  }, [loadTodayEntry]);
+  // Reload data whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadTodayEntry();
+    }, [loadTodayEntry])
+  );
 
   const handleSave = async () => {
     if (!content.trim()) {
@@ -77,7 +85,7 @@ export default function TodayScreen() {
         </ThemedText>
 
         <ThemedText style={styles.prompt}>
-          What are you grateful for todayDB?
+          What are you grateful for today?
         </ThemedText>
 
         <View style={styles.inputContainer}>

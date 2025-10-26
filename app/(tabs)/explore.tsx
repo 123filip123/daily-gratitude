@@ -8,7 +8,8 @@ import {
   initDatabase,
 } from "@/lib/database";
 import { parseDBToDisplayFormat } from "@/lib/date-helpers";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useState } from "react";
 import { Alert, ScrollView, StyleSheet } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 
@@ -20,16 +21,9 @@ export default function CalendarScreen() {
   );
   const colorScheme = useColorScheme();
 
-  useEffect(() => {
-    loadEntries();
-
-    // Refresh when screen comes into focus
-    const interval = setInterval(loadEntries, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadEntries = async () => {
+  const loadEntries = useCallback(async () => {
     try {
+      setLoading(true);
       await initDatabase();
       const entries = await getAllEntries();
 
@@ -49,7 +43,16 @@ export default function CalendarScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Reload data whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Clear selected entry when returning to screen (it might have been deleted)
+      setSelectedEntry(null);
+      loadEntries();
+    }, [loadEntries])
+  );
 
   const handleDayPress = async (day: DateData) => {
     // Only load entry if the day has an entry

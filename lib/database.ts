@@ -9,6 +9,13 @@ export interface GratitudeEntry {
   updated_at: string; // ISO timestamp
 }
 
+export interface NotificationSettings {
+  id: number;
+  enabled: boolean;
+  hour: number; // 0-23
+  minute: number; // 0-59
+}
+
 let db: SQLite.SQLiteDatabase;
 
 /**
@@ -26,6 +33,13 @@ export async function initDatabase(): Promise<void> {
       updated_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_date ON gratitude_entries(date);
+    
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      enabled INTEGER NOT NULL DEFAULT 1,
+      hour INTEGER NOT NULL DEFAULT 8,
+      minute INTEGER NOT NULL DEFAULT 0
+    );
   `);
 }
 
@@ -90,4 +104,60 @@ export async function deleteEntry(date: string): Promise<void> {
   if (!db) await initDatabase();
 
   await db.runAsync("DELETE FROM gratitude_entries WHERE date = ?", [date]);
+}
+
+/**
+ * Delete all gratitude entries
+ */
+export async function deleteAllEntries(): Promise<void> {
+  if (!db) await initDatabase();
+
+  await db.runAsync("DELETE FROM gratitude_entries");
+}
+
+/**
+ * Get notification settings
+ */
+export async function getNotificationSettings(): Promise<NotificationSettings> {
+  if (!db) await initDatabase();
+
+  const result = await db.getFirstAsync<{
+    id: number;
+    enabled: number;
+    hour: number;
+    minute: number;
+  }>("SELECT * FROM settings WHERE id = 1");
+
+  // If no settings exist, create default settings (enabled at 8:00 AM)
+  if (!result) {
+    await db.runAsync(
+      "INSERT INTO settings (id, enabled, hour, minute) VALUES (1, 1, 8, 0)"
+    );
+    return { id: 1, enabled: true, hour: 8, minute: 0 };
+  }
+
+  // Convert SQLite integer (0/1) to boolean
+  return {
+    ...result,
+    enabled: result.enabled === 1,
+  };
+}
+
+/**
+ * Save notification settings
+ */
+export async function saveNotificationSettings(
+  enabled: boolean,
+  hour: number,
+  minute: number
+): Promise<void> {
+  if (!db) await initDatabase();
+
+  // Convert boolean to integer for SQLite
+  const enabledInt = enabled ? 1 : 0;
+
+  await db.runAsync(
+    "INSERT OR REPLACE INTO settings (id, enabled, hour, minute) VALUES (1, ?, ?, ?)",
+    [enabledInt, hour, minute]
+  );
 }
