@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { getEntryByDate, initDatabase, saveEntry } from "@/lib/database";
 import {
   formatDateToDBFormat,
@@ -23,6 +24,15 @@ export default function TodayScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [originalContent, setOriginalContent] = useState("");
   const todayDB = formatDateToDBFormat(new Date());
+
+  // Theme colors for the text input
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({ light: "#ccc", dark: "#444" }, "text");
+  const placeholderColor = useThemeColor(
+    { light: "#999", dark: "#666" },
+    "text"
+  );
 
   const loadTodayEntry = useCallback(async () => {
     try {
@@ -106,10 +116,11 @@ export default function TodayScreen() {
           // Read-only display (matches calendar screen style)
           <ThemedView style={styles.entryContainer}>
             <ThemedView style={styles.entryHeader}>
-              <ThemedText style={styles.prompt}>
+              <ThemedText style={styles.whatYouAreGratefulFor}>
                 What you&apos;re grateful for today:
               </ThemedText>
-              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+
+              <TouchableOpacity onPress={handleEdit}>
                 <ThemedText style={styles.editButtonText}>Edit</ThemedText>
               </TouchableOpacity>
             </ThemedView>
@@ -126,13 +137,20 @@ export default function TodayScreen() {
 
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: backgroundColor,
+                    borderColor: borderColor,
+                    color: textColor,
+                  },
+                ]}
                 multiline
                 numberOfLines={8}
                 value={content}
                 onChangeText={setContent}
                 placeholder="Write your gratitude here..."
-                placeholderTextColor="#999"
+                placeholderTextColor={placeholderColor}
                 textAlignVertical="top"
               />
             </View>
@@ -184,6 +202,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     opacity: 0.7,
   },
+  whatYouAreGratefulFor: {
+    fontSize: 18,
+  },
   prompt: {
     fontSize: 18,
     marginBottom: 16,
@@ -193,12 +214,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     minHeight: 150,
-    backgroundColor: "#fff",
   },
   button: {
     backgroundColor: "#007AFF",
@@ -231,14 +250,6 @@ const styles = StyleSheet.create({
   content: {
     fontSize: 16,
     lineHeight: 24,
-  },
-  editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#007AFF",
-    backgroundColor: "transparent",
   },
   editButtonText: {
     color: "#007AFF",
